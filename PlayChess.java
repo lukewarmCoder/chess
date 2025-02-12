@@ -11,6 +11,7 @@ public class PlayChess {
 		Chess.start();
 		
 		String line = sc.nextLine();
+		
 		while (!line.equals("quit")) {
 
 			if (line.equals("reset")) { // If the user types "reset", it restarts the game and reads the next command.

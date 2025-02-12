@@ -35,8 +35,9 @@ public static ReturnPlay play(String move) {
     System.out.println(Arrays.toString(move_parts));
 
     ReturnPlay result = new ReturnPlay();
+
+
     
-    /* FOLLOWING LINE IS A PLACEHOLDER TO MAKE COMPILER HAPPY */
     /* WHEN YOU FILL IN THIS METHOD, YOU NEED TO RETURN A ReturnPlay OBJECT */
     return result;
 }
@@ -46,7 +47,13 @@ public static ReturnPlay play(String move) {
  * This method should reset the game, and start from scratch.
  */
 public static void start() {
-    /* FILL IN THIS METHOD */
+    
+    ReturnPlay initialState = new ReturnPlay();
+    initialState.piecesOnBoard = new ArrayList<ReturnPiece>();
+
+    // Add white pieces
+    // initialState.piecesOnBoard.add();
+
 }
 
 }
