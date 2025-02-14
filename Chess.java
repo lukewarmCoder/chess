@@ -218,7 +218,7 @@ public static ReturnPlay play(String move) {
     // currentPlayer = (currentPlayer == Player.white) ? Player.black : Player.white;
 
     // Handle draw
-    if (moveParts[2].equals("draw?")) {
+    if (moveParts.length == 3 && moveParts[2].equals("draw?")) {
         result.message = ReturnPlay.Message.DRAW;
     }
 
