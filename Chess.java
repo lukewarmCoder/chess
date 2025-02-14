@@ -6,6 +6,7 @@ package chess;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Set;
 
 public class Chess {
 
@@ -13,7 +14,9 @@ public class Chess {
 
     private static Board board; // Shared across all methods in the Chess class. Keeps track of the game
     private static Player currentPlayer = Player.white; // Start with white's turn
+    private static final Set<String> VALID_THIRD_ARGS = Set.of("draw?", "R", "N", "B", "Q", "P");
 
+    ArrayList<Piece> capturedPieces = new ArrayList<>();
 
 private static ArrayList<ReturnPiece> updatePiecesOnBoard() {
     ArrayList<ReturnPiece> piecesOnBoard = new ArrayList<>();
@@ -27,7 +30,6 @@ private static ArrayList<ReturnPiece> updatePiecesOnBoard() {
                 returnPiece.pieceType = piece.pieceType;
                 returnPiece.pieceFile = ReturnPiece.PieceFile.values()[col]; // Map column to file ('a' - 'h')
                 returnPiece.pieceRank = 8 - row; // Flip row to match chess notation (1-8)
-
                 piecesOnBoard.add(returnPiece);
             }
         }
@@ -35,16 +37,42 @@ private static ArrayList<ReturnPiece> updatePiecesOnBoard() {
     return piecesOnBoard;
 }
 
-// Invalid operation: return board unchanged
-private static ReturnPlay invalidOperation(ReturnPlay result) {
-    System.out.println("Error: Invalid operation");
-    result.piecesOnBoard = updatePiecesOnBoard();
-    return result;
+public static boolean isValidSquare(String FileRank) {
+
+    // Ensure input is exactly 2 characters to avoid exception error
+    if (FileRank == null || FileRank.length() != 2) {
+        return false;
+    }
+
+    char file = FileRank.charAt(0);
+    char rank = FileRank.charAt(1);
+    
+    return (file >= 'a' && file <= 'h') && (rank >= '1' && rank <= '7');
 }
 
-// Trim whitespace from the input string
-private static String trim(String s) {
-    return s.trim();
+public static boolean isValidOperation(String[] input) {
+
+    // Must have 1-3 parts
+    if (input.length < 1 || input.length > 3) {
+        return false;
+    }
+
+    // Single-word commands: Only "resign" is allowed
+    if (input.length == 1) {
+        return input[0].equals("resign");
+    }
+
+    // Validate first and second arguments as valid squares
+    if (!isValidSquare(input[0]) || !isValidSquare(input[1])) {
+        return false;
+    }
+
+    // Third argument (if present) must be in the predefined valid set
+    if (input.length == 3) {
+        return VALID_THIRD_ARGS.contains(input[2]);
+    }
+
+    return true;
 }
 
 /**
@@ -62,61 +90,107 @@ public static ReturnPlay play(String move) {
     ReturnPlay result = new ReturnPlay();
 
     // 1. Parse the move
-    // Outsource to function?
-    // Add check for more than 3 arguments
-    // Add check for file numbers greater than 8
 
-    move = trim(move); // Trim whitespace from the input string
+    move = move.trim(); // Trim whitespace from the input string
     String[] moveParts = move.split(" "); // Split the move into parts
 
-    if (moveParts.length < 2 || moveParts.length > 3) {
-        return invalidOperation(result);
+    // Validate the operation
+    if (!isValidOperation(moveParts)) {
+        result.piecesOnBoard = updatePiecesOnBoard();
+        result.message = ReturnPlay.Message.ILLEGAL_MOVE;
+        return result;
     }
 
-    String from;
-    String to;
-    String action; // Not handled yet
-
-    from = moveParts[0];
-    to = moveParts[1];
-
-    if (moveParts.length == 3) {    
-        action = moveParts[2];
+    // Handle resign -- return board unchanged
+    if (moveParts.length == 1) {
+        result.piecesOnBoard = updatePiecesOnBoard();
+        result.message = (currentPlayer == Player.white) ? ReturnPlay.Message.RESIGN_BLACK_WINS : ReturnPlay.Message.RESIGN_WHITE_WINS;
+        return result;
     }
 
+    String from = moveParts[0], to = moveParts[1];
+
+    int fromFile = board.chessToArrayIndex(from)[1];
+    int fromRank = board.chessToArrayIndex(from)[0];
+
+    int toFile = board.chessToArrayIndex(to)[1];
+    int toRank = board.chessToArrayIndex(to)[0];
+
+    // Check if there is actually a piece at the starting square
+    if (board.board[fromRank][fromFile] == null) {
+        System.out.println("There's no piece there.");
+        result.piecesOnBoard = updatePiecesOnBoard();
+        result.message = ReturnPlay.Message.ILLEGAL_MOVE;
+        return result;
+    }
 
     // Get the piece trying to be moved.
     Piece piece = board.getPiece(board.chessToArrayIndex(from));
     
     // Check if the player is moving the correct color piece
-    if (piece.getColor() != currentPlayer) {
-        System.out.println("You cannot move that piece.");
-        return invalidOperation(result);
+    if (!(piece.getColor().name()).equals(currentPlayer.name())) {
+        System.out.println("You cannot move a piece of the other color.");
+        result.piecesOnBoard = updatePiecesOnBoard();
+        result.message = ReturnPlay.Message.ILLEGAL_MOVE;
+        return result;
     }
 
 
     // 2. Validate the move
 
+
+
+    // - Outsource redundant code?
+    // - Implement illegal_move method in Chess class (returns a ReturnPlay object)
+    // - Implement movePiece method in board class
+    //      - needs to return any captured pieces
+
+
+    // Pawn needs more testing
     if (piece instanceof Pawn) {
         Pawn pawn = (Pawn)piece;
 
         boolean isLegalMove = pawn.isLegalMove(from, to, board.board); // 
 
-        System.exit(0);
-
         if (isLegalMove) {
-            // Do something
-            // board.board[fromRank][fromFile] = null;  // Remove the piece from the start
-            // board.board[toRank][toFile] = piece;    // Place the piece at the destination
+            board.board[fromRank][fromFile] = null;  // Remove the piece from the start
+            board.board[toRank][toFile] = piece;    // Place the piece at the destination
         } else {
-            // illegal move
+            result.piecesOnBoard = updatePiecesOnBoard();
+            result.message = ReturnPlay.Message.ILLEGAL_MOVE;
+            return result;
         }
 
-    } else if (piece instanceof Rook) {
+    } else if (piece instanceof Rook) { // Rook should be all good
+        Rook rook = (Rook)piece;
+
+        boolean isLegalMove = rook.isLegalMove(from, to, board.board);
+
+        if (isLegalMove) {
+            board.board[fromRank][fromFile] = null;  // Remove the piece from the start
+            board.board[toRank][toFile] = piece;    // Place the piece at the destination
+        } else {
+            result.piecesOnBoard = updatePiecesOnBoard();
+            result.message = ReturnPlay.Message.ILLEGAL_MOVE;
+            return result;
+        }
 
     } else if (piece instanceof Knight) {
 
     } else if (piece instanceof Bishop) {
+
+        Bishop bishop = (Bishop)piece;
+
+        boolean isLegalMove = bishop.isLegalMove(from, to, board.board);
+
+        if (isLegalMove) {
+            board.board[fromRank][fromFile] = null;  // Remove the piece from the start
+            board.board[toRank][toFile] = piece;    // Place the piece at the destination
+        } else {
+            result.piecesOnBoard = updatePiecesOnBoard();
+            result.message = ReturnPlay.Message.ILLEGAL_MOVE;
+            return result;
+        }
 
     } else if (piece instanceof Queen) {
 
@@ -141,8 +215,12 @@ public static ReturnPlay play(String move) {
 
 
     // 4. Switch turns
+    // currentPlayer = (currentPlayer == Player.white) ? Player.black : Player.white;
 
-
+    // Handle draw
+    if (moveParts[2].equals("draw?")) {
+        result.message = ReturnPlay.Message.DRAW;
+    }
 
     // 5. Return updated state of board
     result.piecesOnBoard = updatePiecesOnBoard();
@@ -160,6 +238,7 @@ public static ReturnPlay play(String move) {
 public static void start() {
 
     board = new Board(); // Initialize a new game board
+    currentPlayer = Player.white; // Start with white's turn
 
     // Add white pieces
     for (int i = 0; i < 8; i++) {
@@ -190,29 +269,6 @@ public static void start() {
     board.addPiece(new Rook(ReturnPiece.PieceType.BR, ReturnPiece.PieceFile.h, 8));
 
     // board.printBoard();
-
-
-    // ReturnPiece piece = new ReturnPiece();
-    // piece.pieceType = pawn.pieceType;
-    // piece.pieceFile = pawn.pieceFile;
-    // piece.pieceRank = pawn.pieceRank;
-
-    
-    // ReturnPlay result = new ReturnPlay();
-    // result.piecesOnBoard = new ArrayList<>(); // Initialize the list    
-
-    // // Create a test piece (e.g., White Pawn at e2)
-    // ReturnPiece testPiece = new ReturnPiece();
-    // testPiece.pieceType = ReturnPiece.PieceType.WP; // White Pawn
-    // testPiece.pieceFile = ReturnPiece.PieceFile.f;  // Column 'e'
-    // testPiece.pieceRank = 4;                        // Row 2
-
-    // result.piecesOnBoard.add(testPiece); // Add to list
-
-    // System.out.println(result.piecesOnBoard);
-
-    // PlayChess.printBoard(result.piecesOnBoard);
-    
 
 }
 

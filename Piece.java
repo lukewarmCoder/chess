@@ -1,19 +1,20 @@
 package chess;
 
-import chess.ReturnPiece.PieceType;
-
 abstract class Piece {
+
+    public enum pieceColor { white, black }
 
     ReturnPiece.PieceType pieceType;
     ReturnPiece.PieceFile pieceFile;
     int pieceRank;
-    Chess.Player color;
+    pieceColor color;
     
-    public Piece(ReturnPiece.PieceType pieceType, ReturnPiece.PieceFile pieceFile, int pieceRank) {
+    
+    public Piece(ReturnPiece.PieceType pieceType, ReturnPiece.PieceFile pieceFile, int pieceRank, pieceColor color) {
         this.pieceType = pieceType;
         this.pieceFile = pieceFile;
         this.pieceRank = pieceRank;
-        this.color = identifyColor(pieceType);
+        this.color = color;
     }
 
     // Abstract method to be implemented by each specific piece
@@ -25,20 +26,12 @@ abstract class Piece {
         return pieceFile + "" + pieceRank + ": " + pieceType;
     }
 
-    private Chess.Player identifyColor(ReturnPiece.PieceType pieceType) {
-        // Check if the piece is a white piece
-        if (pieceType == PieceType.WP || pieceType == PieceType.WR || pieceType == PieceType.WN || pieceType == PieceType.WB || pieceType == PieceType.WQ || pieceType == PieceType.WK) {
-            return Chess.Player.white;
-        }
-        // Otherwise, it's a black piece
-        else if (pieceType == PieceType.BP || pieceType == PieceType.BR || pieceType == PieceType.BN || pieceType == PieceType.BB || pieceType == PieceType.BK || pieceType == PieceType.BQ) {
-            return Chess.Player.black;
-        }
-        return null;
+    public pieceColor getColor() {
+        return color;
     }
 
-    public Chess.Player getColor() {
-        return color;
+    public boolean isOpponent(Piece other) {
+        return other != null && !this.color.equals(other.color);
     }
 
 }

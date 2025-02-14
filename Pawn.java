@@ -3,7 +3,7 @@ package chess;
 public class Pawn extends Piece {
     
     public Pawn(ReturnPiece.PieceType type, ReturnPiece.PieceFile pieceFile, int rank) {
-        super(type, pieceFile, rank);
+        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WP) ? pieceColor.white : pieceColor.black);
     }
 
     @Override
@@ -22,8 +22,8 @@ public class Pawn extends Piece {
         int direction = (this.pieceType == ReturnPiece.PieceType.WP) ? -1 : 1; // White moves up, Black moves down
         int startRank = (this.pieceType == ReturnPiece.PieceType.WP) ? 6 : 1; // (Rank = row)
 
-        System.out.println(direction);
-        System.out.println(startRank);
+        // System.out.println(direction);
+        // System.out.println(startRank);
 
         // Standard one-step forward move
         if (toRow == fromRow + direction && toCol == fromCol && board[toRow][toCol] == null) {
@@ -37,10 +37,7 @@ public class Pawn extends Piece {
         }
 
         // Diagonal capture
-        if (toRow == fromRow + direction && Math.abs(toCol - fromCol) == 1 &&
-            board[toRow][toCol] != null && board[toRow][toCol].pieceType != this.pieceType) {
-            return true;
-        }
+        
 
         return false;
     }
