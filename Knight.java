@@ -7,17 +7,24 @@ public class Knight extends Piece {
     }
 
     @Override
-    public boolean isLegalMove(String from, String to, Piece[][] board) {
+    public boolean isLegalMove(int fromRow, int fromCol, int toRow, int toCol, Piece[][] board) {
 
-        Board boardUtil = new Board();
+        // Calculate row and column differences
+        int rowDiff = Math.abs(fromRow - toRow);
+        int colDiff = Math.abs(fromCol - toCol);
 
-        int[] fromIndex = boardUtil.chessToArrayIndex(from);
-        int fromRow = fromIndex[0], fromCol = fromIndex[1];
+        // Check if the move is an "L" shape (2 squares in one direction, 1 in the other)
+        if (!((rowDiff == 2 && colDiff == 1) || (rowDiff == 1 && colDiff == 2))) {
+            return false;
+        }
 
-        int[] toIndex = boardUtil.chessToArrayIndex(to);
-        int toRow = toIndex[0], toCol = toIndex[1];
-        
-        return false;
+        // Check if the destination contains the same color piece
+        Piece destinationPiece = board[toRow][toCol];
+        if (destinationPiece != null && !destinationPiece.isOpponent(this)) {
+            return false;
+        }
+
+        return true;
     }
 
 }

@@ -18,7 +18,7 @@ abstract class Piece {
     }
 
     // Abstract method to be implemented by each specific piece
-    public abstract boolean isLegalMove(String from, String to, Piece[][] board);
+    public abstract boolean isLegalMove(int fromRow, int fromCol, int toRow, int toCol, Piece[][] board);
 
     // Override the toString method to return a string representation
     @Override

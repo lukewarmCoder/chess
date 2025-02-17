@@ -6,17 +6,19 @@ package chess;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
+import java.util.List;
+
+import chess.Piece.pieceColor;
 
 public class Chess {
 
     enum Player { white, black }
 
     private static Board board; // Shared across all methods in the Chess class. Keeps track of the game
-    private static Player currentPlayer = Player.white; // Start with white's turn
-    private static final Set<String> VALID_THIRD_ARGS = Set.of("draw?", "R", "N", "B", "Q", "P");
-
-    ArrayList<Piece> capturedPieces = new ArrayList<>();
+    private static Player currentPlayer;
+    
+    private static final List<String> PAWN_PROMOTION_ARGS = Arrays.asList("R", "N", "B", "Q", "P");
+    static ArrayList<Piece> capturedPieces;
 
 private static ArrayList<ReturnPiece> updatePiecesOnBoard() {
     ArrayList<ReturnPiece> piecesOnBoard = new ArrayList<>();
@@ -37,7 +39,7 @@ private static ArrayList<ReturnPiece> updatePiecesOnBoard() {
     return piecesOnBoard;
 }
 
-public static boolean isValidSquare(String FileRank) {
+private static boolean isValidSquare(String FileRank) {
 
     // Ensure input is exactly 2 characters to avoid exception error
     if (FileRank == null || FileRank.length() != 2) {
@@ -47,10 +49,10 @@ public static boolean isValidSquare(String FileRank) {
     char file = FileRank.charAt(0);
     char rank = FileRank.charAt(1);
     
-    return (file >= 'a' && file <= 'h') && (rank >= '1' && rank <= '7');
+    return (file >= 'a' && file <= 'h') && (rank >= '1' && rank <= '8');
 }
 
-public static boolean isValidOperation(String[] input) {
+private static boolean isValidOperation(String[] input) {
 
     // Must have 1-3 parts
     if (input.length < 1 || input.length > 3) {
@@ -69,10 +71,16 @@ public static boolean isValidOperation(String[] input) {
 
     // Third argument (if present) must be in the predefined valid set
     if (input.length == 3) {
-        return VALID_THIRD_ARGS.contains(input[2]);
+        return PAWN_PROMOTION_ARGS.contains(input[2]) || input[2].equals("draw?");
     }
 
     return true;
+}
+
+private static ReturnPlay illegalMove(ReturnPlay result) {
+    result.piecesOnBoard = updatePiecesOnBoard();
+    result.message = ReturnPlay.Message.ILLEGAL_MOVE;
+    return result;
 }
 
 /**
@@ -96,9 +104,8 @@ public static ReturnPlay play(String move) {
 
     // Validate the operation
     if (!isValidOperation(moveParts)) {
-        result.piecesOnBoard = updatePiecesOnBoard();
-        result.message = ReturnPlay.Message.ILLEGAL_MOVE;
-        return result;
+        System.out.println("Invalid input");
+        return illegalMove(result);
     }
 
     // Handle resign -- return board unchanged
@@ -108,31 +115,40 @@ public static ReturnPlay play(String move) {
         return result;
     }
 
+    // Convert FileRank to array index
     String from = moveParts[0], to = moveParts[1];
 
-    int fromFile = board.chessToArrayIndex(from)[1];
-    int fromRank = board.chessToArrayIndex(from)[0];
+    int[] fromIndex = board.chessToArrayIndex(from);
+    int fromRow = fromIndex[0];
+    int fromCol = fromIndex[1];
 
-    int toFile = board.chessToArrayIndex(to)[1];
-    int toRank = board.chessToArrayIndex(to)[0];
+    int[] toIndex = board.chessToArrayIndex(to);
+    int toRow = toIndex[0];
+    int toCol = toIndex[1];
+
+    String thirdArg = "";
+    if (moveParts.length == 3) {
+        thirdArg = moveParts[2];
+    }
+
+    
+
+
+
 
     // Check if there is actually a piece at the starting square
-    if (board.board[fromRank][fromFile] == null) {
+    if (board.board[fromRow][fromCol] == null) {
         System.out.println("There's no piece there.");
-        result.piecesOnBoard = updatePiecesOnBoard();
-        result.message = ReturnPlay.Message.ILLEGAL_MOVE;
-        return result;
+        return illegalMove(result);
     }
 
     // Get the piece trying to be moved.
-    Piece piece = board.getPiece(board.chessToArrayIndex(from));
+    Piece piece = board.getPiece(fromRow, fromCol);
     
     // Check if the player is moving the correct color piece
     if (!(piece.getColor().name()).equals(currentPlayer.name())) {
         System.out.println("You cannot move a piece of the other color.");
-        result.piecesOnBoard = updatePiecesOnBoard();
-        result.message = ReturnPlay.Message.ILLEGAL_MOVE;
-        return result;
+        return illegalMove(result);
     }
 
 
@@ -145,69 +161,109 @@ public static ReturnPlay play(String move) {
     // - Implement movePiece method in board class
     //      - needs to return any captured pieces
 
+    // Implement public boolean resultsInCheck(): returns true if player's move puts their own king in check, false otherwise
+    //      - In each isLegalMove method, need to make a call to resultsInCheck()
 
+    
     // Pawn needs more testing
     if (piece instanceof Pawn) {
-        Pawn pawn = (Pawn)piece;
 
-        boolean isLegalMove = pawn.isLegalMove(from, to, board.board); // 
+        Pawn pawn = (Pawn)piece;
+        boolean isLegalMove = pawn.isLegalMove(fromRow, fromCol, toRow, toCol, board.board); // 
 
         if (isLegalMove) {
-            board.board[fromRank][fromFile] = null;  // Remove the piece from the start
-            board.board[toRank][toFile] = piece;    // Place the piece at the destination
+            board.movePiece(piece, fromRow, fromCol, toRow, toCol);
+
+            // Check if piece qualifies for promotion
+            if ((piece.getColor() == pieceColor.white && toRow == 0) || 
+                (piece.getColor() == pieceColor.black && toRow == 7)) {
+
+                
+                
+                // filter draw?
+                // What if you do like g7 g8 draw?
+                
+
+                // Check if the move is intended to be a pawn promotion
+                //      Must occur after a successful move.
+                // Need to make another call in promotion() to resultsInCheck()
+
+                boolean isLegalPromotion = pawn.isLegalPromotion(piece, thirdArg, board.board);
+
+                if (!isLegalPromotion) {
+                    System.out.println("promotion failed");
+                    result.piecesOnBoard = updatePiecesOnBoard();
+                    result.message = ReturnPlay.Message.ILLEGAL_MOVE;
+                    return result;
+                }
+                System.out.println("promotion success");
+
+            }
+
         } else {
-            result.piecesOnBoard = updatePiecesOnBoard();
-            result.message = ReturnPlay.Message.ILLEGAL_MOVE;
-            return result;
+            System.out.println("Invalid pawn movement");
+            return illegalMove(result);
         }
 
-    } else if (piece instanceof Rook) { // Rook should be all good
-        Rook rook = (Rook)piece;
 
-        boolean isLegalMove = rook.isLegalMove(from, to, board.board);
+    } else if (piece instanceof Rook) {
+
+        Rook rook = (Rook)piece;
+        boolean isLegalMove = rook.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
         if (isLegalMove) {
-            board.board[fromRank][fromFile] = null;  // Remove the piece from the start
-            board.board[toRank][toFile] = piece;    // Place the piece at the destination
+            board.movePiece(piece, fromRow, fromCol, toRow, toCol);
         } else {
-            result.piecesOnBoard = updatePiecesOnBoard();
-            result.message = ReturnPlay.Message.ILLEGAL_MOVE;
-            return result;
+            return illegalMove(result);
         }
 
     } else if (piece instanceof Knight) {
 
+        Knight knight = (Knight)piece;
+        boolean isLegalMove = knight.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
+
+        if (isLegalMove) {
+            board.movePiece(piece, fromRow, fromCol, toRow, toCol);
+        } else {
+            return illegalMove(result);
+        }
+
     } else if (piece instanceof Bishop) {
 
         Bishop bishop = (Bishop)piece;
-
-        boolean isLegalMove = bishop.isLegalMove(from, to, board.board);
+        boolean isLegalMove = bishop.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
         if (isLegalMove) {
-            board.board[fromRank][fromFile] = null;  // Remove the piece from the start
-            board.board[toRank][toFile] = piece;    // Place the piece at the destination
+            board.movePiece(piece, fromRow, fromCol, toRow, toCol);
         } else {
-            result.piecesOnBoard = updatePiecesOnBoard();
-            result.message = ReturnPlay.Message.ILLEGAL_MOVE;
-            return result;
+            return illegalMove(result);
         }
 
     } else if (piece instanceof Queen) {
 
+        Queen queen = (Queen)piece;
+        boolean isLegalMove = queen.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
+
+        if (isLegalMove) {
+            board.movePiece(piece, fromRow, fromCol, toRow, toCol);
+        } else {
+            return illegalMove(result);
+        }
+
     } else if (piece instanceof King) {
 
+        King king = (King)piece;
+        boolean isLegalMove = king.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
+
+        if (isLegalMove) {
+            board.movePiece(piece, fromRow, fromCol, toRow, toCol);
+        } else {
+            return illegalMove(result);
+        }
+
     }
-
+        
     
-        // Send the move instructions to the pawn class
-        
-
-        // If not valid, return null
-
-
-        
-        
-
 
     // 3. Update the board
 
@@ -218,7 +274,7 @@ public static ReturnPlay play(String move) {
     // currentPlayer = (currentPlayer == Player.white) ? Player.black : Player.white;
 
     // Handle draw
-    if (moveParts.length == 3 && moveParts[2].equals("draw?")) {
+    if (thirdArg.equals("draw?")) {
         result.message = ReturnPlay.Message.DRAW;
     }
 
@@ -238,8 +294,9 @@ public static ReturnPlay play(String move) {
 public static void start() {
 
     board = new Board(); // Initialize a new game board
+    capturedPieces = new ArrayList<>();
     currentPlayer = Player.white; // Start with white's turn
-
+    
     // Add white pieces
     for (int i = 0; i < 8; i++) {
         board.addPiece(new Pawn(ReturnPiece.PieceType.WP, ReturnPiece.PieceFile.values()[i], 2));

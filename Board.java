@@ -25,13 +25,24 @@ public class Board {
     }
 
     // Return piece given an array index (not RankFile)
-    public Piece getPiece(int[] index) {
-        return board[index[0]][index[1]];
+    public Piece getPiece(int row, int col) {
+        return board[row][col];
     }
 
     // Used only after move is validated!
-    public void movePiece(Piece piece, int[] start, int[] destination) {
+    public void movePiece(Piece piece, int fromRow, int fromCol, int toRow, int toCol) {
 
+        // If capturing a piece, add it to the list
+        if (board[toRow][toCol] != null) {
+            Chess.capturedPieces.add(getPiece(toRow, toCol));
+        }
+
+        board[toRow][toCol] = piece;
+        board[fromRow][fromCol] = null;
+
+        // Update the piece's file and rank
+        piece.pieceFile = ReturnPiece.PieceFile.values()[toCol];
+        piece.pieceRank = 8 - toRow;
     }
 
     public void printBoard() {

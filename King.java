@@ -7,16 +7,23 @@ public class King extends Piece {
     }
 
     @Override
-    public boolean isLegalMove(String from, String to, Piece[][] board) {
-
-        Board boardUtil = new Board();
-
-        int[] fromIndex = boardUtil.chessToArrayIndex(from);
-        int fromRow = fromIndex[0], fromCol = fromIndex[1];
-
-        int[] toIndex = boardUtil.chessToArrayIndex(to);
-        int toRow = toIndex[0], toCol = toIndex[1];
+    public boolean isLegalMove(int fromRow, int fromCol, int toRow, int toCol, Piece[][] board) {
         
-        return false;
+        // Calculate row and column differences
+        int rowDiff = Math.abs(fromRow - toRow);
+        int colDiff = Math.abs(fromCol - toCol);
+
+        // The king can move exactly 1 square in any direction
+        if (rowDiff > 1 || colDiff > 1) {
+            return false;
+        }
+
+        // Check if the destination contains the same color piece
+        Piece destinationPiece = board[toRow][toCol];
+        if (destinationPiece != null && !destinationPiece.isOpponent(this)) {
+            return false;
+        }
+        
+        return true;
     }
 }
