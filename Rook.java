@@ -1,9 +1,12 @@
 package chess;
 
 public class Rook extends Piece {
+
+    boolean hasMovedOnce;
     
     public Rook(ReturnPiece.PieceType type, ReturnPiece.PieceFile pieceFile, int rank) {
         super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WR) ? pieceColor.white : pieceColor.black);
+        hasMovedOnce = false;
     }
 
     @Override

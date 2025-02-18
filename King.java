@@ -2,8 +2,11 @@ package chess;
 
 public class King extends Piece {
 
+    boolean hasMovedOnce;
+
     public King(ReturnPiece.PieceType type, ReturnPiece.PieceFile pieceFile, int rank) {
         super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WK) ? pieceColor.white : pieceColor.black);
+        hasMovedOnce = false;
     }
 
     @Override

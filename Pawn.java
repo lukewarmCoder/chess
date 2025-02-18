@@ -32,43 +32,26 @@ public class Pawn extends Piece {
             }
         }
 
-        // Call to resultsInCheck()
-
         return false;
     }
 
+    public boolean promotePawn(String requestedPiece, int toRow, int toCol, Piece[][] board) {
+        Piece newPiece;
 
-    // Given the generic letter of a piece (i.e. "R" for rook), returns the appropriate, colored PieceType
-    private ReturnPiece.PieceType stringToPieceType(String requestedPiece, pieceColor color) {
-        ReturnPiece.PieceType pieceType = ReturnPiece.PieceType.WR; // Default initialization
-
-        if (requestedPiece.equals("R")) {
-            pieceType = (color == pieceColor.white) ? ReturnPiece.PieceType.WR : ReturnPiece.PieceType.BR;
-        } else if (requestedPiece.equals("N")) {
-            pieceType = (color == pieceColor.white) ? ReturnPiece.PieceType.WN : ReturnPiece.PieceType.BN;
-        } else if (requestedPiece.equals("B")) {
-            pieceType = (color == pieceColor.white) ? ReturnPiece.PieceType.WB : ReturnPiece.PieceType.BB;
-        } else if (requestedPiece.equals("P")) {
-            pieceType = (color == pieceColor.white) ? ReturnPiece.PieceType.WP : ReturnPiece.PieceType.BP;
-        } else if (requestedPiece.equals("Q")) {
-            pieceType = (color == pieceColor.white) ? ReturnPiece.PieceType.WQ : ReturnPiece.PieceType.BQ;
-        } else {
-            pieceType = (color == pieceColor.white) ? ReturnPiece.PieceType.WQ : ReturnPiece.PieceType.BQ;
-        }
-
-        return pieceType;
-    }
-
-    public boolean isLegalPromotion(Piece piece, String requestedPiece, Piece[][] board) {
+        newPiece = switch (requestedPiece) {
+            case "R" -> new Rook( ((this.color == pieceColor.white) ? ReturnPiece.PieceType.WR : ReturnPiece.PieceType.BR), this.pieceFile, this.pieceRank);
+            case "N" -> new Knight( ((this.color == pieceColor.white) ? ReturnPiece.PieceType.WN : ReturnPiece.PieceType.BN), this.pieceFile, this.pieceRank);
+            case "B" -> new Bishop( ((this.color == pieceColor.white) ? ReturnPiece.PieceType.WB : ReturnPiece.PieceType.BB), this.pieceFile, this.pieceRank);
+            default  -> new Queen( ((this.color == pieceColor.white) ? ReturnPiece.PieceType.WQ : ReturnPiece.PieceType.BQ), this.pieceFile, this.pieceRank);
+        };
         
-        ReturnPiece.PieceType requestedPieceType = stringToPieceType(requestedPiece, piece.getColor());
-
-        System.out.println(requestedPieceType);
-
-        // Call to resultsInCheck()
-
-        return false;
+        board[toRow][toCol] = null; // Remove the pawn from the board
+        board[toRow][toCol] = newPiece; // Add the newly promoted piece
+        
+        // if (!resultsInCheck()) {
+        //      return false;
+        //}
+        
+        return true;
     }
-
-    
 }

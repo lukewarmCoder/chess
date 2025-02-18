@@ -26,10 +26,6 @@ abstract class Piece {
         return pieceFile + "" + pieceRank + ": " + pieceType;
     }
 
-    public pieceColor getColor() {
-        return color;
-    }
-
     public boolean isOpponent(Piece other) {
         return other != null && !this.color.equals(other.color);
     }

@@ -1,7 +1,5 @@
 package chess;
 
-import java.util.Arrays;
-
 public class Board {
 
     public Piece[][] board;
@@ -18,15 +16,28 @@ public class Board {
         return new int[] {row, col};
     }
 
+    // Add pieces given FileRank
     public void addPiece(Piece piece) {
         String FileRank = piece.pieceFile.name() + piece.pieceRank; // Combines file and rank into one string
         int[] index = chessToArrayIndex(FileRank); // Converts FileRank to an array index
         board[index[0]][index[1]] = piece;
     }
 
+    // Add pieces given array index
+    public void setPiece(int row, int col, Piece piece) {
+        board[row][col] = piece;
+    }
+
     // Return piece given an array index (not RankFile)
     public Piece getPiece(int row, int col) {
         return board[row][col];
+    }
+
+    // Get array index location given a piece
+    public int[] getPiecePosition(Piece piece) {
+        String FileRank = piece.pieceFile.name() + piece.pieceRank; // Combines file and rank into one string
+        int[] index = chessToArrayIndex(FileRank); // Converts FileRank to an array index
+        return index;
     }
 
     // Used only after move is validated!

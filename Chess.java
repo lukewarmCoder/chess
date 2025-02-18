@@ -17,8 +17,8 @@ public class Chess {
     private static Board board; // Shared across all methods in the Chess class. Keeps track of the game
     private static Player currentPlayer;
     
-    private static final List<String> PAWN_PROMOTION_ARGS = Arrays.asList("R", "N", "B", "Q", "P");
-    static ArrayList<Piece> capturedPieces;
+    private static final List<String> PAWN_PROMOTION_ARGS = Arrays.asList("R", "N", "B", "Q");
+    public static ArrayList<Piece> capturedPieces;
 
 private static ArrayList<ReturnPiece> updatePiecesOnBoard() {
     ArrayList<ReturnPiece> piecesOnBoard = new ArrayList<>();
@@ -131,10 +131,6 @@ public static ReturnPlay play(String move) {
         thirdArg = moveParts[2];
     }
 
-    
-
-
-
 
     // Check if there is actually a piece at the starting square
     if (board.board[fromRow][fromCol] == null) {
@@ -146,7 +142,7 @@ public static ReturnPlay play(String move) {
     Piece piece = board.getPiece(fromRow, fromCol);
     
     // Check if the player is moving the correct color piece
-    if (!(piece.getColor().name()).equals(currentPlayer.name())) {
+    if (!(piece.color.name()).equals(currentPlayer.name())) {
         System.out.println("You cannot move a piece of the other color.");
         return illegalMove(result);
     }
@@ -169,37 +165,29 @@ public static ReturnPlay play(String move) {
     if (piece instanceof Pawn) {
 
         Pawn pawn = (Pawn)piece;
-        boolean isLegalMove = pawn.isLegalMove(fromRow, fromCol, toRow, toCol, board.board); // 
+        boolean isLegalMove = pawn.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
         if (isLegalMove) {
             board.movePiece(piece, fromRow, fromCol, toRow, toCol);
 
             // Check if piece qualifies for promotion
-            if ((piece.getColor() == pieceColor.white && toRow == 0) || 
-                (piece.getColor() == pieceColor.black && toRow == 7)) {
+            if ((piece.color == pieceColor.white && toRow == 0) || 
+                (piece.color == pieceColor.black && toRow == 7)) {
 
-                
-                
-                // filter draw?
                 // What if you do like g7 g8 draw?
+                //    - For now, we assume the move will be carried out, the promotion defaults to a queen, then the draw is handled
+
+                // Default to queen if no valid third argument is given
+                // Default to queen if thirdArg is "draw?"
+                String promotionPiece = PAWN_PROMOTION_ARGS.contains(thirdArg) ? thirdArg : "Q";
+                boolean isLegalPromotion = pawn.promotePawn(promotionPiece, toRow, toCol, board.board);
                 
-
-                // Check if the move is intended to be a pawn promotion
-                //      Must occur after a successful move.
-                // Need to make another call in promotion() to resultsInCheck()
-
-                boolean isLegalPromotion = pawn.isLegalPromotion(piece, thirdArg, board.board);
-
                 if (!isLegalPromotion) {
-                    System.out.println("promotion failed");
-                    result.piecesOnBoard = updatePiecesOnBoard();
-                    result.message = ReturnPlay.Message.ILLEGAL_MOVE;
-                    return result;
+                    System.out.println("promotion failed, results in check");
+                    return illegalMove(result);
                 }
                 System.out.println("promotion success");
-
             }
-
         } else {
             System.out.println("Invalid pawn movement");
             return illegalMove(result);
@@ -213,6 +201,7 @@ public static ReturnPlay play(String move) {
 
         if (isLegalMove) {
             board.movePiece(piece, fromRow, fromCol, toRow, toCol);
+            rook.hasMovedOnce = true;
         } else {
             return illegalMove(result);
         }
@@ -257,15 +246,12 @@ public static ReturnPlay play(String move) {
 
         if (isLegalMove) {
             board.movePiece(piece, fromRow, fromCol, toRow, toCol);
+            king.hasMovedOnce = true;
         } else {
             return illegalMove(result);
         }
 
     }
-        
-    
-
-    // 3. Update the board
 
 
 
