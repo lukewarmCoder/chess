@@ -1,16 +1,24 @@
 package chess;
 
 public class Pawn extends Piece {
+
+    public boolean enPassantVulnerable;
     
     public Pawn(ReturnPiece.PieceType type, ReturnPiece.PieceFile pieceFile, int rank) {
-        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WP) ? pieceColor.white : pieceColor.black);
+        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WP) ? PieceColor.white : PieceColor.black);
+        enPassantVulnerable = false;
+    }
+
+    @Override
+    public Piece copy() {
+        return new Pawn(this.getPieceType(), this.getPieceFile(), this.getPieceRank());
     }
 
     @Override
     public boolean isLegalMove(int fromRow, int fromCol, int toRow, int toCol, Piece[][] board) {
 
         // Determine the pawn's direction based on color
-        int direction = (this.color == pieceColor.white) ? -1 : 1; // White moves up (-1), Black moves down (+1)
+        int direction = (this.getColor() == PieceColor.white) ? -1 : 1; // White moves up (-1), Black moves down (+1)
 
         // One square forward
         if (toCol == fromCol && toRow == fromRow + direction && board[toRow][toCol] == null) {
@@ -18,7 +26,7 @@ public class Pawn extends Piece {
         }
 
         // Double jump (only from starting position)
-        int startingRow = (this.color == pieceColor.white) ? 6 : 1;
+        int startingRow = (this.getColor() == PieceColor.white) ? 6 : 1;
         if (fromRow == startingRow && toCol == fromCol && toRow == fromRow + 2 * direction 
             && board[toRow][toCol] == null && board[fromRow + direction][toCol] == null) {
             return true;
@@ -30,28 +38,37 @@ public class Pawn extends Piece {
             if (destinationPiece != null && destinationPiece.isOpponent(this)) {
                 return true;
             }
+
+            // En passant check
+            if (board[fromRow][toCol] instanceof Pawn) {
+                Pawn adjacentPawn = (Pawn)board[fromRow][toCol];
+                if (adjacentPawn.enPassantVulnerable && adjacentPawn.getColor() != this.getColor()) {
+                    return true;
+                }
+            }
         }
+
 
         return false;
     }
 
-    public boolean promotePawn(String requestedPiece, int toRow, int toCol, Piece[][] board) {
+    public boolean isDoubleJump(int fromRow, int toRow, Piece[][] board) {
+        return Math.abs(toRow - fromRow) == 2;
+    }
+
+    public void promotePawn(String requestedPiece, int toRow, int toCol, Piece[][] board) {
         Piece newPiece;
 
         newPiece = switch (requestedPiece) {
-            case "R" -> new Rook( ((this.color == pieceColor.white) ? ReturnPiece.PieceType.WR : ReturnPiece.PieceType.BR), this.pieceFile, this.pieceRank);
-            case "N" -> new Knight( ((this.color == pieceColor.white) ? ReturnPiece.PieceType.WN : ReturnPiece.PieceType.BN), this.pieceFile, this.pieceRank);
-            case "B" -> new Bishop( ((this.color == pieceColor.white) ? ReturnPiece.PieceType.WB : ReturnPiece.PieceType.BB), this.pieceFile, this.pieceRank);
-            default  -> new Queen( ((this.color == pieceColor.white) ? ReturnPiece.PieceType.WQ : ReturnPiece.PieceType.BQ), this.pieceFile, this.pieceRank);
+            case "R" -> new Rook( ((this.getColor() == PieceColor.white) ? ReturnPiece.PieceType.WR : ReturnPiece.PieceType.BR), this.getPieceFile(), this.getPieceRank());
+            case "N" -> new Knight( ((this.getColor() == PieceColor.white) ? ReturnPiece.PieceType.WN : ReturnPiece.PieceType.BN), this.getPieceFile(), this.getPieceRank());
+            case "B" -> new Bishop( ((this.getColor() == PieceColor.white) ? ReturnPiece.PieceType.WB : ReturnPiece.PieceType.BB), this.getPieceFile(), this.getPieceRank());
+            default  -> new Queen( ((this.getColor() == PieceColor.white) ? ReturnPiece.PieceType.WQ : ReturnPiece.PieceType.BQ), this.getPieceFile(), this.getPieceRank());
         };
         
         board[toRow][toCol] = null; // Remove the pawn from the board
         board[toRow][toCol] = newPiece; // Add the newly promoted piece
-        
-        // if (!resultsInCheck()) {
-        //      return false;
-        //}
-        
-        return true;
+
+        System.out.println("Piece swapped in: " + newPiece);
     }
 }

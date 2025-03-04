@@ -3,7 +3,12 @@ package chess;
 public class Queen extends Piece{
 
     public Queen(ReturnPiece.PieceType type, ReturnPiece.PieceFile pieceFile, int rank) {
-        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WQ) ? pieceColor.white : pieceColor.black);
+        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WQ) ? PieceColor.white : PieceColor.black);
+    }
+
+    @Override
+    public Piece copy() {
+        return new Queen(this.getPieceType(), this.getPieceFile(), this.getPieceRank());
     }
 
     @Override
@@ -16,7 +21,7 @@ public class Queen extends Piece{
         if (!isDiagonalMove && !isStraightMove) {
             return false; // Invalid move for a queen
         }
-
+ 
         // Check if the path is clear
         if (!isPathClear(fromRow, fromCol, toRow, toCol, board)) {
             return false; // Path is blocked
@@ -28,6 +33,8 @@ public class Queen extends Piece{
         if (destinationPiece != null && !destinationPiece.isOpponent(this)) {
             return false; // Cannot capture a piece of the same color
         }
+
+    
 
         return true; // Valid queen move
     

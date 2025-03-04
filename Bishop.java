@@ -3,8 +3,13 @@ package chess;
 public class Bishop extends Piece {
 
     public Bishop(ReturnPiece.PieceType type, ReturnPiece.PieceFile pieceFile, int rank) {
-        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WB) ? pieceColor.white : pieceColor.black);
+        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WB) ? PieceColor.white : PieceColor.black);
     } 
+
+    @Override
+    public Piece copy() {
+        return new Bishop(this.getPieceType(), this.getPieceFile(), this.getPieceRank());
+    }
 
     @Override
     public boolean isLegalMove(int fromRow, int fromCol, int toRow, int toCol, Piece[][] board) {

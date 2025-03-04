@@ -5,13 +5,18 @@ public class Rook extends Piece {
     boolean hasMovedOnce;
     
     public Rook(ReturnPiece.PieceType type, ReturnPiece.PieceFile pieceFile, int rank) {
-        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WR) ? pieceColor.white : pieceColor.black);
+        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WR) ? PieceColor.white : PieceColor.black);
         hasMovedOnce = false;
     }
 
     @Override
-    public boolean isLegalMove(int fromRow, int fromCol, int toRow, int toCol, Piece[][] board) {
+    public Piece copy() {
+        return new Rook(this.getPieceType(), this.getPieceFile(), this.getPieceRank());
+    }
 
+    @Override
+    public boolean isLegalMove(int fromRow, int fromCol, int toRow, int toCol, Piece[][] board) {
+        
         // Rook can only move in a straight line (same row or same column)
         if (fromRow != toRow && fromCol != toCol) {
             return false;

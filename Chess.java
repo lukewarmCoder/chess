@@ -3,12 +3,9 @@ package chess;
 // Contributors: Luke Fernandez - lmf232
 //               Esha Tripathi - et522
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import chess.Piece.pieceColor;
 
 public class Chess {
 
@@ -18,7 +15,6 @@ public class Chess {
     private static Player currentPlayer;
     
     private static final List<String> PAWN_PROMOTION_ARGS = Arrays.asList("R", "N", "B", "Q");
-    public static ArrayList<Piece> capturedPieces;
 
 private static ArrayList<ReturnPiece> updatePiecesOnBoard() {
     ArrayList<ReturnPiece> piecesOnBoard = new ArrayList<>();
@@ -29,7 +25,7 @@ private static ArrayList<ReturnPiece> updatePiecesOnBoard() {
             Piece piece = board.board[row][col]; // Get the piece at (row, col)
             if (piece != null) { // Only add if there's a piece
                 ReturnPiece returnPiece = new ReturnPiece();
-                returnPiece.pieceType = piece.pieceType;
+                returnPiece.pieceType = piece.getPieceType();
                 returnPiece.pieceFile = ReturnPiece.PieceFile.values()[col]; // Map column to file ('a' - 'h')
                 returnPiece.pieceRank = 8 - row; // Flip row to match chess notation (1-8)
                 piecesOnBoard.add(returnPiece);
@@ -142,51 +138,68 @@ public static ReturnPlay play(String move) {
     Piece piece = board.getPiece(fromRow, fromCol);
     
     // Check if the player is moving the correct color piece
-    if (!(piece.color.name()).equals(currentPlayer.name())) {
+    if (!piece.isOwnedBy(currentPlayer)) {
         System.out.println("You cannot move a piece of the other color.");
         return illegalMove(result);
     }
 
 
+
     // 2. Validate the move
 
-
-
-    // - Outsource redundant code?
-    // - Implement illegal_move method in Chess class (returns a ReturnPlay object)
-    // - Implement movePiece method in board class
-    //      - needs to return any captured pieces
 
     // Implement public boolean resultsInCheck(): returns true if player's move puts their own king in check, false otherwise
     //      - In each isLegalMove method, need to make a call to resultsInCheck()
 
     
-    // Pawn needs more testing
     if (piece instanceof Pawn) {
 
         Pawn pawn = (Pawn)piece;
         boolean isLegalMove = pawn.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
         if (isLegalMove) {
+
+            // Does the move put the player's own king in check, or doesn't get their king out of check?
+            boolean putsKingInCheck = board.putsKingInCheck(fromRow, fromCol, toRow, toCol);
+            if (putsKingInCheck) {
+                System.out.println("That move does not get your king out of check, or its puts your king into check");
+                return illegalMove(result);
+            }
+
+            // Check if it's an en passant move
+            if (piece instanceof Pawn && board.board[fromRow][toCol] instanceof Pawn) {
+                Pawn adjacentPawn = (Pawn) board.board[fromRow][toCol];
+                if (adjacentPawn.enPassantVulnerable && adjacentPawn.getColor() != piece.getColor()) {
+                    // Capture the adjacent pawn
+                    board.board[fromRow][toCol] = null;  
+                    if (board.putsKingInCheck(fromRow, fromCol, toRow, toCol)) {
+                        board.board[fromRow][toCol] = adjacentPawn; // Undo the move
+                        return illegalMove(result);
+                    }
+                }
+            }
+
             board.movePiece(piece, fromRow, fromCol, toRow, toCol);
 
+            // If double jump, make the pawn en passant vulnerable
+            if (pawn.isDoubleJump(fromRow, toRow, board.board)) {
+                pawn.enPassantVulnerable = true;
+            } else {
+                pawn.enPassantVulnerable = false;
+            }
+
             // Check if piece qualifies for promotion
-            if ((piece.color == pieceColor.white && toRow == 0) || 
-                (piece.color == pieceColor.black && toRow == 7)) {
+            if ((piece.getColor() == Piece.PieceColor.white && toRow == 0) || 
+                (piece.getColor() == Piece.PieceColor.black && toRow == 7)) {
 
                 // What if you do like g7 g8 draw?
-                //    - For now, we assume the move will be carried out, the promotion defaults to a queen, then the draw is handled
+                // We assume the move will be carried out, the promotion defaults to a queen, then the draw is handled
 
                 // Default to queen if no valid third argument is given
                 // Default to queen if thirdArg is "draw?"
                 String promotionPiece = PAWN_PROMOTION_ARGS.contains(thirdArg) ? thirdArg : "Q";
-                boolean isLegalPromotion = pawn.promotePawn(promotionPiece, toRow, toCol, board.board);
-                
-                if (!isLegalPromotion) {
-                    System.out.println("promotion failed, results in check");
-                    return illegalMove(result);
-                }
-                System.out.println("promotion success");
+                pawn.promotePawn(promotionPiece, toRow, toCol, board.board);
+            
             }
         } else {
             System.out.println("Invalid pawn movement");
@@ -200,8 +213,17 @@ public static ReturnPlay play(String move) {
         boolean isLegalMove = rook.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
         if (isLegalMove) {
+
+            // Does the move put the player's own king in check?
+            boolean putsKingInCheck = board.putsKingInCheck(fromRow, fromCol, toRow, toCol);
+            if (putsKingInCheck) {
+                System.out.println("That move does not get your king out of check, or its puts your king into check");
+                return illegalMove(result);
+            }
+
             board.movePiece(piece, fromRow, fromCol, toRow, toCol);
             rook.hasMovedOnce = true;
+            
         } else {
             return illegalMove(result);
         }
@@ -212,6 +234,14 @@ public static ReturnPlay play(String move) {
         boolean isLegalMove = knight.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
         if (isLegalMove) {
+
+            // Does the move put the player's own king in check?
+            boolean putsKingInCheck = board.putsKingInCheck(fromRow, fromCol, toRow, toCol);
+            if (putsKingInCheck) {
+                System.out.println("That move does not get your king out of check, or its puts your king into check");
+                return illegalMove(result);
+            }
+
             board.movePiece(piece, fromRow, fromCol, toRow, toCol);
         } else {
             return illegalMove(result);
@@ -223,6 +253,14 @@ public static ReturnPlay play(String move) {
         boolean isLegalMove = bishop.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
         if (isLegalMove) {
+
+            // Does the move put the player's own king in check?
+            boolean putsKingInCheck = board.putsKingInCheck(fromRow, fromCol, toRow, toCol);
+            if (putsKingInCheck) {
+                System.out.println("That move does not get your king out of check, or its puts your king into check");
+                return illegalMove(result);
+            }
+
             board.movePiece(piece, fromRow, fromCol, toRow, toCol);
         } else {
             return illegalMove(result);
@@ -234,6 +272,14 @@ public static ReturnPlay play(String move) {
         boolean isLegalMove = queen.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
         if (isLegalMove) {
+
+            // Does the move put the player's own king in check?
+            boolean putsKingInCheck = board.putsKingInCheck(fromRow, fromCol, toRow, toCol);
+            if (putsKingInCheck) {
+                System.out.println("That move does not get your king out of check, or its puts your king into check");
+                return illegalMove(result);
+            }
+
             board.movePiece(piece, fromRow, fromCol, toRow, toCol);
         } else {
             return illegalMove(result);
@@ -242,33 +288,117 @@ public static ReturnPlay play(String move) {
     } else if (piece instanceof King) {
 
         King king = (King)piece;
-        boolean isLegalMove = king.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
-        if (isLegalMove) {
-            board.movePiece(piece, fromRow, fromCol, toRow, toCol);
+        // Check for castling
+        if (fromCol == 4 && Math.abs(toCol - fromCol) == 2) { // Castling move (king moves 2 squares)
+           // Check if the King has moved
+            if (king.hasMovedOnce) {
+                System.out.println("King has already moved");
+                return illegalMove(result);
+            }
+
+            int rookCol = (toCol == 6) ? 7 : 0; // Rook's column
+            Rook rook = (Rook)board.getPiece(fromRow, rookCol);
+
+            if (rook == null || rook.hasMovedOnce) {
+                System.out.println("Rook has already moved or doesn't exist.");
+                return illegalMove(result);
+            }
+
+            // Check if the King is currently in check
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    Piece pieces = board.board[i][j];
+                    if (pieces != null && pieces.getColor() != piece.getColor()) {
+                        if (pieces.isLegalMove(i, j, fromRow, fromCol, board.board)) {
+                            System.out.println("You cannot castle while your king is in check");
+                            return illegalMove(result); // Return if a piece can attack the king
+                        }
+                    }
+                }
+            }
+
+            // Check if the squares between the King and Rook are clear
+            int direction = (toCol == 6) ? 1 : -1; // Rook direction (right for kingside, left for queenside)
+            for (int i = fromCol + direction; i != rookCol; i += direction) {
+                if (board.getPiece(fromRow, i) != null) {
+                    System.out.println("There are pieces between the king and rook");
+                    return illegalMove(result);
+                }
+            }
+
+            // Check if the King moves through check
+            direction = (toCol == 6) ? 1 : -1;
+            for (int i = fromCol + direction; i != toCol + direction; i += direction) {
+                if (board.putsKingInCheck(fromRow, fromCol, toRow, i)) {
+                    System.out.println("King passes over (or lands on) a square that can be attacked");
+                    return illegalMove(result);
+                }
+            }
+
+            // Move the King and the Rook
+            board.movePiece(king, fromRow, fromCol, toRow, toCol);
+            board.movePiece(rook, fromRow, rookCol, toRow, toCol - direction);
+            
             king.hasMovedOnce = true;
+            rook.hasMovedOnce = true;
         } else {
-            return illegalMove(result);
-        }
+            // Handle regular King move
+            boolean isLegalMove = king.isLegalMove(fromRow, fromCol, toRow, toCol, board.board);
 
+            if (isLegalMove) {
+
+                // Does the move put the player's own king in check?
+                boolean putsKingInCheck = board.putsKingInCheck(fromRow, fromCol, toRow, toCol);
+                if (putsKingInCheck) {
+                    System.out.println("That move does not get your king out of check, or its puts your king into check");
+                    return illegalMove(result);
+                }
+
+                board.movePiece(piece, fromRow, fromCol, toRow, toCol);
+                king.hasMovedOnce = true;
+            } else {
+                return illegalMove(result);
+            }
+        }
+    }
+    
+
+
+    
+
+    // Handle draw
+    // Assuming draw should occur before a checkmate.
+    if (thirdArg.equals("draw?")) {
+        result.message = ReturnPlay.Message.DRAW;
+        currentPlayer = (currentPlayer == Player.white) ? Player.black : Player.white;
+        result.piecesOnBoard = updatePiecesOnBoard();
+        return result;
     }
 
+
+    Piece.PieceColor opposingPlayerColor = (currentPlayer == Player.white) ? Piece.PieceColor.black : Piece.PieceColor.white;
+    if (board.isCheckmate(opposingPlayerColor, piece)) {
+        result.message = (currentPlayer == Player.white) ? 
+            ReturnPlay.Message.CHECKMATE_WHITE_WINS : 
+            ReturnPlay.Message.CHECKMATE_BLACK_WINS;
+        result.piecesOnBoard = updatePiecesOnBoard();
+        return result;
+    }
+
+
+    // Check if the current player's move put the opponent's king in check
+    if (board.putsOpponentInCheck( (currentPlayer == Player.white) ? Piece.PieceColor.black : Piece.PieceColor.white)) {
+        result.message = ReturnPlay.Message.CHECK;
+    }
 
 
 
     // 4. Switch turns
-    // currentPlayer = (currentPlayer == Player.white) ? Player.black : Player.white;
+    currentPlayer = (currentPlayer == Player.white) ? Player.black : Player.white;
 
-    // Handle draw
-    if (thirdArg.equals("draw?")) {
-        result.message = ReturnPlay.Message.DRAW;
-    }
-
-    // 5. Return updated state of board
+    // Return updated state of board
     result.piecesOnBoard = updatePiecesOnBoard();
-    
-    // But we need to declare and initialize an ArrayList<ReturnPiece> type in Chess.java, 
-    // then can add pieces to it, then set it to the piecesOnBoard field of a ReturnPlay object.
 
     return result;
 }
@@ -280,7 +410,6 @@ public static ReturnPlay play(String move) {
 public static void start() {
 
     board = new Board(); // Initialize a new game board
-    capturedPieces = new ArrayList<>();
     currentPlayer = Player.white; // Start with white's turn
     
     // Add white pieces
@@ -310,8 +439,6 @@ public static void start() {
     board.addPiece(new Bishop(ReturnPiece.PieceType.BB, ReturnPiece.PieceFile.f, 8));
     board.addPiece(new Knight(ReturnPiece.PieceType.BN, ReturnPiece.PieceFile.g, 8));
     board.addPiece(new Rook(ReturnPiece.PieceType.BR, ReturnPiece.PieceFile.h, 8));
-
-    // board.printBoard();
 
 }
 

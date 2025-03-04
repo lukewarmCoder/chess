@@ -3,7 +3,12 @@ package chess;
 public class Knight extends Piece {
     
     public Knight(ReturnPiece.PieceType type, ReturnPiece.PieceFile pieceFile, int rank) {
-        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WN) ? pieceColor.white : pieceColor.black);
+        super(type, pieceFile, rank, (type == ReturnPiece.PieceType.WN) ? PieceColor.white : PieceColor.black);
+    }
+
+    @Override
+    public Piece copy() {
+        return new Knight(this.getPieceType(), this.getPieceFile(), this.getPieceRank());
     }
 
     @Override
